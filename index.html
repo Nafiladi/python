@@ -3,249 +3,625 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Catch the Falling Objects</title>
+    <title>Falling Balls Quiz</title>
+    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
     <style>
         body {
             margin: 0;
-            overflow: hidden;
-            font-family: Arial, sans-serif;
-        }
-
-        #gameContainer {
-            position: relative;
-            width: 100vw;
-            height: 100vh;
-            background-color: #f0f8ff;
-            overflow: hidden;
-        }
-
-        #basket {
-            position: absolute;
-            bottom: 10px;
-            left: 50%;
-            width: 150px;
-            height: 75px;
-            background: linear-gradient(to bottom, #ff6347, #ff4500);
-            border-radius: 10px;
-            transform: translateX(-50%);
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
-        }
-
-        .fallingObject {
-            position: absolute;
-            width: 50px;
-            height: 50px;
-            background-color: #4682b4;
-            border-radius: 50%;
             display: flex;
             justify-content: center;
             align-items: center;
+            min-height: 100vh;
+            background-color: #f0f0f0;
+            font-family: 'Press Start 2P', cursive;
+            overflow: hidden; /* Prevent scrollbars during animation */
+        }
+
+        #game-container {
+            position: relative; /* Allows for absolutely positioned elements within */
+            width: 100%;
+            height: 100vh;
+            background-image: linear-gradient(to bottom, #6ab7ff, #fff); /* Sky gradient */
+            overflow: hidden;
+        }
+
+        #falling-balls-container {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none; /* Allows clicks to pass through to the canvas */
+        }
+
+        .ball {
+            position: absolute;
+            width: 50px; /* Increased size for better visibility */
+            height: 50px;
+            border-radius: 50%;
+            /* Removed background-color, will use images */
+            /* background-color: #ffcc00;  */
             cursor: pointer;
+            animation: fall 5s linear infinite; /* Default fall speed */
+            top: -50px; /* Start above the viewport */
+            box-shadow: 1px 1px 5px rgba(0, 0, 0, 0.2); /* Add shadow for depth */
+            transition: transform 0.2s ease; /* Smooth transform on hover/click */
+            pointer-events: auto;  /* Important: Make balls clickable */
         }
 
-        .fallingObject span {
-            color: white;
-            font-size: 14px;
-            font-weight: bold;
-            text-align: center;
+        .ball:hover {
+            transform: scale(1.2); /* Enlarge on hover */
+            z-index: 10; /* Bring hovered ball to front */
         }
 
-        #score {
-            position: absolute;
-            top: 10px;
-            left: 10px;
-            font-size: 20px;
-            color: #333;
+        @keyframes fall {
+            from {
+                top: -50px;
+            }
+            to {
+                top: 100vh; /* Fall to bottom of viewport */
+            }
         }
 
-        #combo {
-            position: absolute;
-            top: 40px;
-            left: 10px;
-            font-size: 18px;
-            color: #666;
-        }
-
-        #lives {
-            position: absolute;
-            top: 10px;
-            left: 150px;
-            font-size: 20px;
-            color: #333;
-        }
-
-        #gameOverUI {
-            display: none;
+        #quiz-container {
             position: absolute;
             top: 50%;
             left: 50%;
             transform: translate(-50%, -50%);
-            background-color: rgba(0, 0, 0, 0.8);
-            color: white;
+            background-color: rgba(255, 255, 255, 0.9);
             padding: 20px;
-            text-align: center;
             border-radius: 10px;
+            text-align: center;
+            display: none; /* Initially hidden */
+            z-index: 11; /* Sit on top of everything */
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+            width: 80%;
+            max-width: 400px; /* Added maximum width */
         }
 
-        #gameOverUI button {
-            margin: 10px;
-            padding: 10px 20px;
-            font-size: 16px;
+        #quiz-question {
+            font-size: 1.4em;
+            margin-bottom: 15px;
+            color: #333;
+        }
+
+        #quiz-options {
+            display: flex;
+            flex-direction: column;
+            align-items: stretch; /* Stretch options to container width */
+            margin-bottom: 15px;
+        }
+
+        .quiz-option {
+            padding: 12px;
+            margin: 8px 0;
             cursor: pointer;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            background-color: #f9f9f9;
+            transition: background-color 0.3s ease, transform 0.2s ease;
+            text-align: center;
+            font-size: 1em;
+            color: #333;
+        }
+
+        .quiz-option:hover {
+            background-color: #007bff;
+            color: white;
+            transform: scale(1.05);
+        }
+        .quiz-option.correct {
+            background-color: #28a745;
+            color: white;
+        }
+
+        .quiz-option.incorrect {
+          background-color: #dc3545;
+          color: white;
+        }
+
+        #quiz-result {
+            font-size: 1.2em;
+            font-weight: bold;
+            margin-bottom: 15px;
+            color: #333;
+        }
+
+        #next-question-btn, #play-again-btn {
+            padding: 10px 20px;
+            cursor: pointer;
+            border: none;
+            border-radius: 5px;
+            background-color: #007bff;
+            color: white;
+            font-size: 1em;
+            transition: background-color 0.3s ease;
+            margin-top: 10px;
+        }
+
+        #next-question-btn:hover, #play-again-btn:hover {
+            background-color: #0056b3;
+        }
+
+        #game-over-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.8);
+            display: none; /* Initially hidden */
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 12;
+        }
+
+        #game-over-content {
+            background-color: white;
+            padding: 20px;
+            border-radius: 10px;
+            text-align: center;
+            width: 80%;
+            max-width: 400px;
+        }
+
+        #game-over-title {
+            font-size: 1.6em;
+            color: #333;
+            margin-bottom: 10px;
+        }
+
+        #game-over-score {
+            font-size: 1.2em;
+            color: #555;
+            margin-bottom: 15px;
+        }
+
+        #play-again-btn {
+            margin-top: 10px;
+        }
+
+        #game-info {
+            position: absolute;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background-color: rgba(255, 255, 255, 0.8);
+            padding: 10px 20px;
+            border-radius: 5px;
+            font-size: 1em;
+            z-index: 11;
+            display: flex;
+            gap: 20px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        #score-display {
+            color: #333;
+        }
+
+        #lives-display {
+            color: #e53e3e;
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        #leaderboard-link {
+            position: absolute;
+            bottom: 20px;
+            right: 20px;
+            padding: 10px 15px;
+            background-color: #007bff;
+            color: white;
+            text-decoration: none;
+            border-radius: 5px;
+            font-size: 1em;
+            z-index: 11;
+            transition: background-color 0.3s ease;
+        }
+
+        #leaderboard-link:hover {
+            background-color: #0056b3;
+        }
+
+        /* Styles for larger screens */
+        @media (min-width: 1200px) {
+            .ball {
+                width: 60px;
+                height: 60px;
+            }
+            #quiz-question {
+                font-size: 1.6em;
+            }
+            .quiz-option {
+                font-size: 1.1em;
+                padding: 14px;
+            }
+            #quiz-result {
+                font-size: 1.4em;
+            }
+            #next-question-btn, #play-again-btn {
+                font-size: 1.1em;
+                padding: 12px 25px;
+            }
+            #game-info {
+                font-size: 1.2em;
+            }
+        }
+        /* smaller screen */
+        @media (max-width: 768px){
+           .ball {
+                width: 40px;
+                height: 40px;
+            }
+            #quiz-question {
+                font-size: 1.2em;
+            }
+            .quiz-option {
+                font-size: 0.9em;
+                padding: 10px;
+            }
+            #quiz-result {
+                font-size: 1em;
+            }
+            #next-question-btn, #play-again-btn {
+                font-size: 0.9em;
+                padding: 10px 20px;
+            }
+            #game-info {
+                font-size: 0.9em;
+            }
+            #leaderboard-link{
+               font-size: 0.8em;
+               padding: 8px 12px;
+            }
         }
     </style>
 </head>
 <body>
-    <div id="gameContainer">
-        <div id="score">Score: 0</div>
-        <div id="combo">Combo: x0</div>
-        <div id="lives">Lives: 3</div>
-        <div id="basket"></div>
+    <div id="game-container">
+        <div id="falling-balls-container"></div>
+        <div id="quiz-container" class="hidden">
+            <h2 id="quiz-question"></h2>
+            <div id="quiz-options">
+                <div class="quiz-option" id="option-1"></div>
+                <div class="quiz-option" id="option-2"></div>
+                <div class="quiz-option" id="option-3"></div>
+                <div class="quiz-option" id="option-4"></div>
+            </div>
+            <div id="quiz-result"></div>
+            <button id="next-question-btn" class="hidden">Next Question</button>
+            <button id="play-again-btn" class="hidden">Play Again</button>
+        </div>
+        <div id="game-over-overlay" class="hidden">
+            <div id="game-over-content">
+                <h2 id="game-over-title">Game Over</h2>
+                <p id="game-over-score">Your Score: 0</p>
+                <button id="play-again-btn">Play Again</button>
+            </div>
+        </div>
+        <div id="game-info">
+            <div id="score-display">Score: 0</div>
+            <div id="lives-display">Lives: 3</div>
+        </div>
+        <a href="https://sites.google.com/view/who-is-lick-ball-master/leaderboard" id="leaderboard-link">Leaderboard</a>
     </div>
-    <div id="gameOverUI">
-        <h1>Game Over</h1>
-        <p id="finalScore"></p>
-        <button id="playAgainButton">Play Again</button>
-        <button id="leaderboardButton">View Leaderboard</button>
-    </div>
-    <script>
-        const gameContainer = document.getElementById("gameContainer");
-        const basket = document.getElementById("basket");
-        const scoreDisplay = document.getElementById("score");
-        const comboDisplay = document.getElementById("combo");
-        const livesDisplay = document.getElementById("lives");
-        const gameOverUI = document.getElementById("gameOverUI");
-        const finalScore = document.getElementById("finalScore");
-        const playAgainButton = document.getElementById("playAgainButton");
-        const leaderboardButton = document.getElementById("leaderboardButton");
 
+    <script>
+        const gameContainer = document.getElementById('game-container');
+        const fallingBallsContainer = document.getElementById('falling-balls-container');
+        const quizContainer = document.getElementById('quiz-container');
+        const quizQuestionElement = document.getElementById('quiz-question');
+        const quizOptions = document.getElementsByClassName('quiz-option');
+        const quizResult = document.getElementById('quiz-result');
+        const nextQuestionBtn = document.getElementById('next-question-btn');
+        const playAgainBtn = document.getElementById('play-again-btn');
+        const gameOverOverlay = document.getElementById('game-over-overlay');
+        const gameOverScoreDisplay = document.getElementById('game-over-score');
+        const scoreDisplay = document.getElementById('score-display');
+        const livesDisplay = document.getElementById('lives-display');
+
+        const names = ["NHLin", "BSK", "Darren", "Hao Zhe", "Steve", "Jaden", "Albert chin", "Noah", "Galvin", "Nevin", "Jorgina", "Vivien", "Yanxi", "Eddy", "Junteng", "Jeff", "Jeff Lai", "Ejaculating Ethan", "Aeryn", "Javier", "Iris", "Albert Kong", "Hibernation NHLin", "Fredrick", "Galvin Rizz", "Eddy Ng", "Albert Pung", "Rage BSK", "Jeff Stone Henge", "CHZ's mom", "Secret", "Ethanol", "Frustrated Jeff", "Frustrated CHZ", "Structure", "KJTanime", "Eddy Ng", "Argentina", "Adolf CHZ", "NevinLee", "Albert Rang", "PKBSK", "Jeffrey Bozos", "Noah Chin", "NevinLegacy", "Pretentiousness Steve", "Darren Tien", "Bio Zhe"];
+        const characteristics = {
+            "NHLin": ["Skibidi", "Sigma", "Fanum Tax", "POV"],
+            "BSK": ["Fenum tax", "mogged", "rizz", "Gyatt"],
+            "Darren": ["Ohio", "Ling-gang-gu", "gorilla", "Forgiveness"],
+            "Hao Zhe": ["mogged", "Learner", "Indian", "moaning master"],
+            "Steve": ["Fanum tax", "Fatty Acid", "Oil Up", "Administrator"],
+            "Jaden": ["Sigma", "Galvin", "5 Big Mac", "eyes"],
+            "Albert chin": ["Gyatt", "Hok", "Sleep", "CHZ"],
+            "Noah": ["POV", "Aeryn", "Diddy", "BGyat+"],
+            "Galvin": ["rizz", "male", "???", "The main factor"],
+            "Nevin": ["Ling-gang-gu", "Godly", "Boom", "BRO"],
+            "Jorgina": ["gorilla", "RM400", "Ambient", "Furry"],
+            "Vivien": ["Forgiveness", "Lose is Win", "NHLin", "Erika"],
+            "Yanxi": ["morning master", "Jerkmate", "Glycerol", "Amino acid"],
+            "Eddy": ["Learner", "Glucose", "not my lover", "Arminous"],
+            "Junteng": ["Indian", "No Ball", "Mathematic", "Bioengineering"],
+            "Jeff": ["Fatty Acid", "Skibidi", "Sigma", "Fanum Tax"],
+            "Jeff Lai": ["Oil Up", "Fenum tax", "mogged", "rizz"],
+            "Ethan": ["Administrator", "Ohio", "Ling-gang-gu", "gorilla"],
+            "Aeryn": ["Galvin", "Learner", "Indian", "moaning master"],
+            "Javier": ["5 Big Mac", "Fatty Acid", "Oil Up", "Administrator"],
+            "Iris": ["eyes", "Galvin", "5 Big Mac", "eyes"],
+            "Albert Kong": ["Hok", "Hok", "Sleep", "CHZ"],
+            "Hibernation NHLin": ["Sleep", "Aeryn", "Diddy", "BGyat+"],
+            "Fredrick": ["CHZ", "male", "???", "The main factor"],
+            "Galvin Rizz": ["Aeryn", "Godly", "Boom", "BRO"],
+            "Eddy Ng": ["Diddy", "RM400", "Ambient", "Furry"],
+            "Albert Pung": ["BGyat+", "Lose is Win", "NHLin", "Erika"],
+            "Rage BSK": ["male", "Jerkmate", "Glycerol", "Amino acid"],
+            "Jeff Stone Henge": ["???", "Glucose", "not my lover", "Arminous"],
+            "CHZ's mom": ["The main factor", "No Ball", "Mathematic", "Bioengineering"],
+            "Secret": ["Godly", "Skibidi", "Sigma", "Fanum Tax"],
+            "Ethanol": ["Boom", "Fenum tax", "mogged", "rizz"],
+            "Frustrated Jeff": ["BRO", "Ohio", "Ling-gang-gu", "gorilla"],
+            "Frustrated CHZ": ["RM400", "Learner", "Indian", "moaning master"],
+            "Structure": ["Ambient", "Fatty Acid", "Oil Up", "Administrator"],
+            "KJTanime": ["Furry", "Galvin", "5 Big Mac", "eyes"],
+            "Eddy Ng": ["Lose is Win", "Hok", "Sleep", "CHZ"],
+            "Argentina": ["NHLin", "Aeryn", "Diddy", "BGyat+"],
+            "Adolf CHZ": ["Erika", "male", "???", "The main factor"],
+            "NevinLee": ["Jerkmate", "Godly", "Boom", "BRO"],
+            "Albert Rang": ["Glycerol", "RM400", "Ambient", "Furry"],
+            "PKBSK": ["Amino acid", "Lose is Win", "NHLin", "Erika"],
+            "Jeffrey Bozos": ["Glucose", "Jerkmate", "Glycerol", "Amino acid"],
+            "Noah Chin": ["not my lover", "Glucose", "not my lover", "Arminous"],
+            "NevinLegacy": ["Arminous", "No Ball", "Mathematic", "Bioengineering"],
+            "Pretentiousness Steve": ["No Ball", "Skibidi", "Sigma", "Fanum Tax"],
+            "Darren Tien": ["Mathematic", "Fenum tax", "mogged", "rizz"],
+            "Bio Zhe": ["Bioengineering", "Ohio", "Ling-gang-gu", "gorilla"]
+        };
+
+        let balls = [];
         let score = 0;
         let lives = 3;
-        let fallingSpeed = 5; 
+        let currentQuestion;
+        let selectedBall;
         let combo = 0;
-        let gameRunning = true;
+        let achievements = new Set();  
 
-        const names = [
-            "Steve", "NGLin", "BSK", "Hibernation NHLin", "Jeff", "Jeffrey Bezos",
-            "Vivien", "Jorgina", "Ethan", "Ethanol", "Administrator Ethan",
-            "Jeff StoneHenge", "Juntheng", "FurryKJT", "Noah", "Albert Pung",
-            "Albert Chin", "Albert Kong", "Noah Chin", "Nevin", "Frustrated CHZ",
-            "CHZ", "CHZ'S mom", "Jeff Lai", "Fredrick", "Eddy", "Asian Diddy"
-        ];
+        const ballSpeedMultiplier = 1;
+        let gameRunning = true; 
 
-        let basketPosition = gameContainer.offsetWidth / 2 - 75; // Initialize basket position
-        const basketSpeed = 20;
+        const correctSound = new Audio("correct.mp3"); 
+        const incorrectSound = new Audio("incorrect.mp3"); 
+        const gameOverSound = new Audio("gameover.mp3");
+        const buttonClickSound = new Audio("buttonClick.mp3");
 
-        // Set the initial position of the basket
-        basket.style.left = `${basketPosition}px`;
+        function playSound(sound) {
+            sound.currentTime = 0; 
+            sound.play();
+        }
 
-        // Add touch support for dragging the basket
-        let isDragging = false;
+        
+        function createBall(name) {
+            const ball = document.createElement('div');
+            ball.classList.add('ball');
+            ball.style.left = `${Math.random() * 80 + 10}%`; 
+            ball.style.animationDuration = `${5 * ballSpeedMultiplier}s`; 
+            ball.dataset.name = name; 
 
-        basket.addEventListener("touchstart", (event) => {
-            isDragging = true;
-        });
+            const img = document.createElement('img');
+            img.src = `images/${name}.png`;
+            img.style.width = '100%'; 
+            img.style.height = '100%';
+            ball.appendChild(img);
 
-        basket.addEventListener("touchmove", (event) => {
-            if (isDragging) {
-                const touch = event.touches[0];
-                const newBasketPosition = touch.clientX - basket.offsetWidth / 2;
-
-                // Ensure the basket stays within the game container
-                basketPosition = Math.max(0, Math.min(gameContainer.offsetWidth - basket.offsetWidth, newBasketPosition));
-                basket.style.left = `${basketPosition}px`;
-            }
-        });
-
-        basket.addEventListener("touchend", () => {
-            isDragging = false;
-        });
-
-        document.addEventListener("keydown", (event) => {
-            if (event.key === "ArrowLeft") {
-                basketPosition = Math.max(0, basketPosition - basketSpeed);
-            } else if (event.key === "ArrowRight") {
-                basketPosition = Math.min(gameContainer.offsetWidth - basket.offsetWidth, basketPosition + basketSpeed);
-            }
-            basket.style.left = `${basketPosition}px`;
-        });
-
-        function createFallingObject() {
-            if (!gameRunning) return;
-
-            const object = document.createElement("div");
-            object.classList.add("fallingObject");
-
-            const randomName = names[Math.floor(Math.random() * names.length)];
-            const textElement = document.createElement("span");
-            textElement.textContent = randomName;
-
-            object.appendChild(textElement);
-            object.style.left = `${Math.random() * (gameContainer.offsetWidth - 50)}px`;
-            object.style.top = "0px";
-            gameContainer.appendChild(object);
-
-            let fallingInterval = setInterval(() => {
-                const objectTop = parseInt(object.style.top);
-                object.style.top = `${objectTop + fallingSpeed}px`;
-
-                const objectRect = object.getBoundingClientRect();
-                const basketRect = basket.getBoundingClientRect();
-
-                // Check if the object is caught by the basket
-                if (
-                    objectRect.bottom >= basketRect.top &&
-                    objectRect.left < basketRect.right &&
-                    objectRect.right > basketRect.left
-                ) {
-                    score++;
-                    combo++;
-                    scoreDisplay.textContent = `Score: ${score}`;
-                    comboDisplay.textContent = `Combo: x${combo}`;
-                    object.remove();
-                    clearInterval(fallingInterval);
+            ball.addEventListener('click', () => {
+                if (gameRunning) {
+                    handleBallClick(name, ball);
                 }
+            });
+            return ball;
+        }
 
-                // Check if the object is missed
-                if (objectTop > gameContainer.offsetHeight) {
-                    combo = 0;
-                    comboDisplay.textContent = `Combo: x${combo}`;
-                    lives--;
-                    livesDisplay.textContent = `Lives: ${lives}`;
-                    object.remove();
-                    clearInterval(fallingInterval);
+       
+        function removeBall(ball) {
+            ball.remove();
+            balls.splice(balls.indexOf(ball), 1); 
+        }
 
-                    if (lives <= 0) {
-                        endGame();
+       generateQuestion(name) 
+            const correctCharacteristic = characteristics[name][0]; // Get the correct answer
+            const otherCharacteristics = characteristics[name].slice(1); // Get incorrect answers
+            const allOptions = [correctCharacteristic, ...otherCharacteristics];
+
+             
+            while (allOptions.length < 4) {
+                allOptions.push(allOptions[Math.floor(Math.random() * allOptions.length)]);
+            }
+            
+            const shuffledOptions = shuffleArray(allOptions);
+
+
+            return {
+                question: `What is a characteristic of ${name}?`,
+                options: shuffledOptions,
+                correctAnswer: correctCharacteristic,
+            };
+        
+
+      
+        function displayQuiz(questionData) {
+            quizQuestionElement.textContent = questionData.question;
+
+            for (let i = 0; i < quizOptions.length; i++) {
+                quizOptions[i].textContent = questionData.options[i];
+                quizOptions[i].classList.remove('correct', 'incorrect'); // Reset any previous state
+                quizOptions[i].onclick = () => {
+                    if (gameRunning) {
+                         handleOptionSelect(questionData.options[i]);
                     }
+                };
+            }
+            quizContainer.classList.remove('hidden');
+        }
+
+       
+        function hideQuiz() {
+            quizContainer.classList.add('hidden');
+            nextQuestionBtn.classList.add('hidden');
+        }
+
+        
+        function shuffleArray(array) {
+            let currentIndex = array.length, randomIndex;
+            while (currentIndex != 0) {
+                randomIndex = Math.floor(Math.random() * currentIndex);
+                currentIndex--;
+                [array[currentIndex], array[randomIndex]] = [array[randomIndex], array[currentIndex]];
+            }
+            return array;
+        }
+
+        
+        function handleBallClick(name, ball) {
+            selectedBall = ball; 
+            currentQuestion = generateQuestion(name);
+            displayQuiz(currentQuestion);
+            ball.style.animationPlayState = 'paused';
+            playSound(buttonClickSound);
+        }
+
+      
+        function handleOptionSelect(selectedOption) {
+            if (!selectedBall) return; 
+            if (selectedOption === currentQuestion.correctAnswer) {
+                score++;
+                combo++;
+                scoreDisplay.textContent = `Score: ${score}`;
+                quizResult.textContent = 'Correct!';
+                playSound(correctSound);
+                selectedBall.classList.add('correct');
+                if (combo >= 3) {
+                    achievements.add('Combo Master');
+                    displayAchievement('Combo Master');
                 }
-            }, 30);
+                if (score >= 5) {
+                    achievements.add('Score Hunter');
+                    displayAchievement('Score Hunter');
+                }
+
+                
+                setTimeout(()=> {
+                    removeBall(selectedBall);
+                    selectedBall = null;
+                    hideQuiz();
+                    startSpawnTimer();
+                }, 500);
+
+            } else {
+                lives--;
+                combo = 0; 
+                livesDisplay.textContent = `Lives: ${lives}`;
+                quizResult.textContent = 'Incorrect!';
+                playSound(incorrectSound);
+                selectedBall.classList.add('incorrect');
+                setTimeout(() => {
+                    removeBall(selectedBall);
+                    selectedBall = null; 
+                    hideQuiz();
+                    startSpawnTimer();
+                }, 500);
+
+                if (lives <= 0) {
+                    gameOver();
+                }
+            }
+
+            
+            nextQuestionBtn.classList.remove('hidden');
         }
 
-        function endGame() {
-            gameRunning = false;
-            clearInterval(objectSpawner);
-            finalScore.textContent = `Your Final Score: ${score}`;
-            gameOverUI.style.display = "block";
+        
+        function handleNextQuestion() {
+            hideQuiz();
+            startSpawnTimer();
+            if (balls.length > 0) {
+               
+                balls[0].style.animationPlayState = 'running';
+            }
+            nextQuestionBtn.classList.add('hidden');
         }
 
-        playAgainButton.addEventListener("click", () => {
+        
+        function gameOver() {
+            gameRunning = false; 
+            clearInterval(spawnInterval); 
+            balls.forEach(ball => ball.remove()); 
+            balls = []; 
+            gameOverScoreDisplay.textContent = `Your Score: ${score}`;
+            gameOverOverlay.classList.remove('hidden');
+            playSound(gameOverSound);
+        }
+
+        
+        function restartGame() {
             score = 0;
             lives = 3;
             combo = 0;
+            scoreDisplay.textContent = 'Score: 0';
+            livesDisplay.textContent = 'Lives: 3';
+            gameOverOverlay.classList.add('hidden');
             gameRunning = true;
-            scoreDisplay.textContent = `Score: ${score}`;
-            comboDisplay.textContent = `Combo: x${combo}`;
-            livesDisplay.textContent = `Lives: ${lives}`;
-            gameOverUI.style.display = "none";
-            objectSpawner = setInterval(createFallingObject, 1000);
+            achievements.clear();
+            fallingBallsContainer.innerHTML = '';
+            balls = [];
+            startSpawnTimer();
+        }
+
+        function displayAchievement(achievementName) {
+            const message = document.createElement('div');
+            message.textContent = `Achievement Unlocked: ${achievementName}!`;
+            message.style.position = 'absolute';
+            message.style.top = `${Math.random() * 80 + 10}%`;
+            message.style.left = `${Math.random() * 60 + 20}%`;
+            message.style.backgroundColor = '#f0f0f0';
+            message.style.padding = '10px';
+            message.style.borderRadius = '5px';
+            message.style.zIndex = '15';
+            message.style.transition = 'opacity 2s ease-in-out, transform 0.5s ease-out';
+            fallingBallsContainer.appendChild(message);
+
+         
+            setTimeout(() => {
+                message.style.opacity = '0';
+                message.style.transform = 'translateY(-20px)';
+                setTimeout(() => message.remove(), 2000);
+            }, 3000);
+        }
+
+     
+        let spawnInterval;
+       
+        function startSpawnTimer() {
+            clearInterval(spawnInterval); 
+            spawnInterval = setInterval(() => {
+                if (gameRunning) {
+                    const randomName = names[Math.floor(Math.random() * names.length)];
+                    const ball = createBall(randomName);
+                    balls.push(ball);
+                    fallingBallsContainer.appendChild(ball);
+                }
+            }, 1000); 
+        }
+
+        
+        nextQuestionBtn.addEventListener('click', () => {
+            handleNextQuestion();
+            playSound(buttonClickSound);
+        });
+        playAgainBtn.addEventListener('click', () => {
+            restartGame();
+            playSound(buttonClickSound);
         });
 
-        leaderboardButton.addEventListener("click", () => {
-            window.location.href = "https://sites.google.com/view/who-is-lick-ball-master/leaderboard";
-        });
-
-        let objectSpawner = setInterval(createFallingObject, 1000);
+        
+        startSpawnTimer(); 
     </script>
 </body>
 </html>
