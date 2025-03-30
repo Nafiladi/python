@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Who is Ohio?</title>
+    <style>
+        body {
+            font-family: sans-serif;
+            text-align: center;
+            background-color: #f0f0f0;
+            padding: 20px;
+        }
+        #game-container {
+            background-color: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            max-width: 600px;
+            margin: 0 auto;
+        }
+        #output {
+            margin-bottom: 20px;
+            min-height: 100px;
+        }
+        input[type="text"] {
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            width: 300px;
+        }
+        button {
+            padding: 10px 20px;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        #timer {
+            font-size: 1.2em;
+            margin-bottom: 10px;
+        }
+        #mode-select {
+            margin-bottom: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div id="game-container">
+        <h1>Who is Ohio?</h1>
+        <div id="mode-select">
+            <label for="gameMode">Game Mode:</label>
+            <select id="gameMode">
+                <option value="normal">Normal</option>
+                <option value="timed">Timed</option>
+                <option value="hint">Hint</option>
+            </select>
+        </div>
+        <div id="timer"></div>
+        <div id="output"></div>
+        <input type="text" id="guessInput" placeholder="Enter your guess">
+        <button id="guessButton">Guess</button>
+        <p id="scoreDisplay">Score: 0</p>
+    </div>
+
+    <script>
+        const characters = {
+            "Steve": { description: "the sentient stapler with existential dread", features: ["office supplies", "existential"] },
+            "Hao": { description: "the master of puns so bad they're good (or are they?)", features: ["puns", "bad jokes"] },
+            "Jeff": { description: "ruler of the rubber chicken dimension and collector of odd socks", features: ["rubber chickens", "odd socks"] },
+            "NHLin": { description: "trapped in a spreadsheet that's also a black hole", features: ["spreadsheets", "black holes"] },
+            "Ethan": { description: "the interdimensional coffee bean barista", features: ["coffee", "interdimensional"] },
+            "EthanSen": { description: "whispering ancient memes in binary", features: ["memes", "binary"] },
+            "Admin(Ethan)": { description: "debugging reality with a rubber duck", features: ["debugging", "rubber ducks"] },
+            "Flawness(Ethan)": { description: "the glitch in the matrix who thinks they're a butterfly", features: ["glitches", "butterflies"] },
+            "Jeff Stonehenge": { description: "architect of impossible structures made of cheese", features: ["cheese", "impossible structures"] },
+            "Jagong": { description: "collector of lost socks and intergalactic travel guides", features: ["socks", "travel guides"] },
+            "Eddy": { description: "the kazoo virtuoso who can summon rain with off-key notes", features: ["kazoo", "rain"] },
+            "Hao's Mom": { description: "the ultimate source of wisdom and snacks (mostly questionable)", features: ["wisdom", "snacks"] },
+            "Ling gang gu(Nevin)": { description: "translator of alien cat videos and squirrel philosophy", features: ["alien cats", "squirrels"] },
+            "Noah chin": { description: "the philosopher of misplaced commas and existential toast", features: ["commas", "toast"] },
+            "Rizzler(Galvin)": { description: "the smooth-talking potato with a collection of fedoras", features: ["potatoes", "fedoras"] },
+            "Albert": { description: "the sentient calculator with a passion for interpretive dance", features: ["calculators", "dance"] },
+            "Jeff": { description: "the collector of odd socks and conspiracy theories about pigeons", features: ["socks", "pigeons"] },
+            "Nevin": { description: "the programmer of sentient houseplants and rogue semicolons", features: ["houseplants", "semicolons"] },
+            "A rogue semicolon": { description: "plotting world domination from your code", features: ["code", "world domination"] },
+            "A sentient rubber duck": { description: "with a surprisingly deep voice and a penchant for opera", features: ["rubber ducks", "opera"] },
+            "The concept of 'Mondays'": { description: "a sentient entity of pure dread and lukewarm coffee", features: ["dread", "coffee"] },
+            "A talking toaster": { description: "that dispenses wisdom and slightly burnt toast", features: ["toast", "wisdom"] },
+            "A cloud that only rains glitter": { description: "and occasionally small, confused fish", features: ["glitter", "fish"] },
+            "A rapping cactus": { description: "spitting fire rhymes and occasional spines", features: ["cactus", "rap"] },
+            "A banana that can fly": { description: "and is convinced it's a superhero", features: ["bananas", "superheroes"] },
+            "A time traveling pigeon": { description: "who's seen some stuff.", features: ["time travel", "pigeons"] }
+        };
+
+        const phrases = {
+            intro: [
+                "Welcome to the chaotic realm of 'Who is Ohio?' Prepare for the absurd!",
+                "Enter the void where logic takes a vacation. We call it 'Who is Ohio?'",
+                "Greetings, mortal. You dare to play 'Who is Ohio?' Prepare for madness!",
+                "Behold! The enigma of 'Who is Ohio?' A test of your sanity and snack tolerance.",
+                "Step into the abyss of 'Who is Ohio?' Where reality is a suggestion.",
+            ],
+            thinking: [
+                "I'm contemplating an entity... or a glitch in the cosmic microwave...",
+                "My thoughts drift to a being... or a rogue thought escaped from a banana...",
+                "I'm fixated on something... or nothing... it's Ohio, obviously.",
+                "Let us consider... a paradox? A dream? A sentient sock? Ohio.",
+                "My mind wanders... to a concept, an object, a person... or a talking toaster? Ohio.",
+            ],
+            guess: [
+                "Who... or what... dares to claim the title of Ohio? And why are they wearing a hat?",
+                "Tell me, what twisted form does Ohio take? And what's their favorite snack?",
+                "Unmask the enigma. Who is this Ohio? And are they allergic to glitter?",
+                "Speak, and reveal the truth. What is Ohio? And can they do a backflip?",
+                "By what name shall we know Ohio? And do they have a secret handshake?",
+            ],
+            correct: [
+                "You have pierced the veil! It was indeed Ohio! And they applaud your snack choice.",
+                "Magnificent! Your intuition aligns with the absurd. Ohio revealed! You win a virtual high-five.",
+                "Astonishing! You've correctly identified Ohio! Have a cookie.",
+                "You have grasped the intangible. Ohio is yours! And they think your socks are cool.",
+                "Reality bends to your will! You found Ohio! You have unlocked a secret level.",
+            ],
+            incorrect: [
+                "Your perception falters. That was not Ohio. And they are judging your fashion sense.",
+                "Alas, you have strayed from the path. Ohio remains elusive. And they are disappointed in your life choices.",
+                "Incorrect! Ohio remains shrouded in mystery. And they think your hair is weird.",
+                "Your guess is... inadequate. Ohio escapes your grasp. And they are questioning your existence.",
+                "You have failed to comprehend Ohio. And they are now following you on social media.",
+            ],
+            ending: [
+                "The truth of Ohio fades back into the chaos. And they took your car keys.",
+                "And so, the enigma of Ohio returns to the shadows. And they left a note that says 'I'll be back'.",
+                "The Ohio experience concludes. Farewell. And they replaced your sugar with salt.",
+                "May your future guesses be more... Ohio-like. And they are now your spirit animal.",
+                "The game of Ohio ends here. Or does it? And they are watching you from the ceiling fan.",
+            ],
+        };
+
+        let score = 0;
+        let high_score = 0;
+        let max_attempts = 5;
+        let min_score = -20;
+        let chosen_character, character_data;
+        let guess_count = 0;
+        let timerInterval;
+        let timeLeft = 15;
+        let gameMode = document.getElementById("gameMode").value;
+
+        const outputDiv = document.getElementById("output");
+        const guessInput = document.getElementById("guessInput");
+        const guessButton = document.getElementById("guessButton");
+        const scoreDisplay = document.getElementById("scoreDisplay");
+        const timerDisplay = document.getElementById("timer");
+
+        function startGame() {
+            gameMode = document.getElementById("gameMode").value;
+            chosen_character = Object.keys(characters)[Math.floor(Math.random() * Object.keys(characters).length)];
+            character_data = characters[chosen_character];
+            guess_count = 0;
+            timeLeft = 15;
+            timerDisplay.textContent = "";
+
+            outputDiv.innerHTML = `<p>${phrases.intro[Math.floor(Math.random() * phrases.intro.length)]}</p>
+                                   <p>${phrases.thinking[Math.floor(Math.random() * phrases.thinking.length)]}</p>
+                                   <p>They are... ${chosen_character}, ${character_data.description}</p>
+                                   <p>${phrases.guess[Math.floor(Math.random() * phrases.guess.length)]}</p>`;
+
+            if (gameMode === "timed") {
+                timerInterval = setInterval(updateTimer, 1000);
+            }
+        }
+
+        function updateTimer() {
+            timeLeft--;
+            timerDisplay.textContent = Time left: ${timeLeft}s;
+            if (timeLeft <= 0) {
+                clearInterval(timerInterval);
+                outputDiv.innerHTML += "<p>Time's up!</p>";
+                startGame();
+            }
+        }
+
+        function handleGuess() {
+            const guess = guessInput.value.trim();
+
+            if (guess === "") {
+                outputDiv.innerHTML += "<p>Please enter a valid guess. Or a haiku. Whatever floats your boat.</p>";
+                return;
+            }
+
+            guess_count++;
+
+            if (guess.toLowerCase() === chosen_character.toLowerCase()) {
+                outputDiv.innerHTML += <p>${phrases.correct[Math.floor(Math.random() * phrases.correct.length)]}</p>;
+                score += 10 - guess_count + 1;
+                if (score > high_score) {
+                    high_score = score;
+                }
+                scoreDisplay.textContent = Score: ${score};
+                startGame();
+            } else {
+                outputDiv.innerHTML += <p>${phrases.incorrect[Math.floor(Math.random() * phrases.incorrect.length)]}</p>;
+                if (guess_count >= max_attempts) {
+                    outputDiv.innerHTML += <p>The true Ohio was: ${chosen_character}</p>;
+                    score -= 5;
+                    scoreDisplay.textContent = Score: ${score};
+                    startGame();
+                }
+            }
+
+            if (Math.random() < 0.2 + (guess_count * 0.03)) {
+                const events = [
+                    "Suddenly, a flock of rubber chickens descends from the sky! (Clucking sounds)",
+                    "The room starts spinning and all the names change to 'Banana'. (Spinning sound)",
+                    "A rogue semicolon escapes and starts rewriting the laws of physics. (Error beep)",
+                    "A sentient rubber duck starts singing opera, causing minor earthquakes. (Opera singing)",
+                    "The concept of 'Mondays' materializes and demands a sacrifice of coffee. (Moaning sound)",
+                    "A talking toaster dispenses cryptic advice and slightly burnt toast. (Toaster sound)",
+                    "A cloud of glitter rains down, and everyone starts speaking in rhymes. (Sparkling sound)",
+                    "A time-traveling pigeon drops a note from the future: 'Don't trust the socks.' (Cooing sound)",
+                    "All the letters in your keyboard rearrange themselves. (Typing sound)",
+                    "The floor becomes lava for 10 seconds. (Sizzling sound)",
+                ];
+                const event = events[Math.floor(Math.random() * events.length)];
+                outputDiv.innerHTML += <p>${event}</p>;
+                if (event.includes("rubber chickens") || event.includes("lava")) {
+                    score -= 2;
+                } else if (event.includes("earthquakes")) {
+                    score -= 3;
+                } else if (event.includes("Mondays")) {
+                    score -= 4;
+                }
+                scoreDisplay.textContent = Score: ${score};
+            }
+
+            guessInput.value = "";
+
+            if (gameMode === "hint" && guess_count > 0) {
+                outputDiv.innerHTML += <p>Hint: They are related to ${character_data.features[Math.floor(Math.random() * character_data.features.length)]}</p>;
+            }
+        }
+
+        guessButton.addEventListener("click", handleGuess);
+        startGame();
+    </script>
+</body>
+</html>
