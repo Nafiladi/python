@@ -387,15 +387,12 @@
         const ballSpeedMultiplier = 1;
         let gameRunning = true; 
 
-        const correctSound = new Audio("correct.mp3"); 
-        const incorrectSound = new Audio("incorrect.mp3"); 
-        const gameOverSound = new Audio("gameover.mp3");
-        const buttonClickSound = new Audio("buttonClick.mp3");
+        const correctSound = null; 
+        const incorrectSound = null; 
+        const gameOverSound = null;
+        const buttonClickSound = null;
 
-        function playSound(sound) {
-            sound.currentTime = 0; 
-            sound.play();
-        }
+
 
         
         function createBall(name) {
@@ -405,11 +402,12 @@
             ball.style.animationDuration = `${5 * ballSpeedMultiplier}s`; 
             ball.dataset.name = name; 
 
-            const img = document.createElement('img');
-            img.src = `images/${name}.png`;
-            img.style.width = '100%'; 
-            img.style.height = '100%';
-            ball.appendChild(img);
+          
+            const randomColor = `#${Math.floor(Math.random() * 16777215).toString(16)}`;
+            ball.style.backgroundColor = randomColor;
+
+            const randomShape = Math.random() > 0.5 ? '50%' : '0'; // Circle or square
+            ball.style.borderRadius = randomShape;
 
             ball.addEventListener('click', () => {
                 if (gameRunning) {
