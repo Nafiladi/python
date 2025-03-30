@@ -282,7 +282,8 @@
     </style>
 </head>
 <body>
-    <div id="game-container">
+    <button id="start-game-btn">Start Game</button>
+    <div id="game-container" class="hidden">
         <div id="falling-balls-container"></div>
         <div id="quiz-container" class="hidden">
             <h2 id="quiz-question"></h2>
@@ -311,6 +312,14 @@
     </div>
 
     <script>
+        const startGameBtn = document.getElementById('start-game-btn');
+
+        startGameBtn.addEventListener('click', () => {
+            startGameBtn.classList.add('hidden'); // Hide the start button
+            gameContainer.classList.remove('hidden'); // Show the game container
+            startSpawnTimer(); // Start spawning balls
+        });
+
         const gameContainer = document.getElementById('game-container');
         const fallingBallsContainer = document.getElementById('falling-balls-container');
         const quizContainer = document.getElementById('quiz-container');
