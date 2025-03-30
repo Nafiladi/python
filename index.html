@@ -24,8 +24,8 @@
             position: absolute;
             bottom: 10px;
             left: 50%;
-            width: 100px;
-            height: 50px;
+            width: 150px;
+            height: 75px;
             background-color: #ff6347;
             border-radius: 10px;
             transform: translateX(-50%);
@@ -33,17 +33,28 @@
 
         .fallingObject {
             position: absolute;
-            width: 30px;
-            height: 30px;
+            width: 50px;
+            height: 50px;
             background-color: #4682b4;
             border-radius: 50%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            cursor: pointer;
+        }
+
+        .fallingObject span {
+            color: white;
+            font-size: 14px;
+            font-weight: bold;
+            text-align: center;
         }
 
         #score {
             position: absolute;
             top: 10px;
             left: 10px;
-            font-size: 20px;
+            font-size: 24px;
             color: #333;
         }
 
@@ -51,7 +62,7 @@
             position: absolute;
             top: 10px;
             left: 150px;
-            font-size: 20px;
+            font-size: 24px;
             color: #333;
         }
 
@@ -134,9 +145,19 @@
             textElement.style.fontSize = "12px";
 
             object.appendChild(textElement);
-            object.style.left = `${Math.random() * (gameContainer.offsetWidth - 30)}px`;
+            object.style.left = `${Math.random() * (gameContainer.offsetWidth - 50)}px`;
             object.style.top = "0px";
             gameContainer.appendChild(object);
+
+            // Make the object clickable
+            object.addEventListener("click", () => {
+                score++;
+                combo++;
+                scoreDisplay.textContent = `Score: ${score} (Combo: x${combo})`;
+                updateBackground();
+                checkAchievements();
+                object.remove();
+            });
 
             let fallingInterval = setInterval(() => {
                 const objectTop = parseInt(object.style.top);
