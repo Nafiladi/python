@@ -1,201 +1,234 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <title>Who is Ohio?</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Catch the Falling Objects</title>
+    <link rel="stylesheet" href="styles.css">
     <style>
         body {
-            font-family: sans-serif;
-            text-align: center;
-            background-color: #f0f0f0;
-            padding: 20px;
+            margin: 0;
+            overflow: hidden;
+            font-family: Arial, sans-serif;
         }
-        #game-container {
-            background-color: white;
-            padding: 20px;
+
+        #gameContainer {
+            position: relative;
+            width: 100vw;
+            height: 100vh;
+            background-color: #f0f8ff;
+            overflow: hidden;
+        }
+
+        #basket {
+            position: absolute;
+            bottom: 10px;
+            left: 50%;
+            width: 100px;
+            height: 50px;
+            background-color: #ff6347;
             border-radius: 10px;
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-            max-width: 600px;
-            margin: 0 auto;
+            transform: translateX(-50%);
         }
-        #output {
-            margin-bottom: 20px;
-            min-height: 100px;
+
+        .fallingObject {
+            position: absolute;
+            width: 30px;
+            height: 30px;
+            background-color: #4682b4;
+            border-radius: 50%;
         }
-        input[type="text"] {
-            padding: 10px;
-            border: 1px solid #ccc;
-            border-radius: 5px;
-            width: 300px;
+
+        #score {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            font-size: 20px;
+            color: #333;
         }
-        button {
-            padding: 10px 20px;
-            background-color: #007bff;
+
+        #lives {
+            position: absolute;
+            top: 10px;
+            left: 150px;
+            font-size: 20px;
+            color: #333;
+        }
+
+        #gameOverUI {
+            display: none;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background-color: rgba(0, 0, 0, 0.8);
             color: white;
-            border: none;
-            border-radius: 5px;
+            padding: 20px;
+            text-align: center;
+            border-radius: 10px;
+        }
+
+        #gameOverUI button {
+            margin: 10px;
+            padding: 10px 20px;
+            font-size: 16px;
             cursor: pointer;
-        }
-        button:hover {
-            background-color: #0056b3;
-        }
-        #timer {
-            font-size: 1.2em;
-            margin-bottom: 10px;
-        }
-        #mode-select {
-            margin-bottom: 10px;
         }
     </style>
 </head>
 <body>
-    <div id="game-container">
-        <h1>Who is Ohio?</h1>
-        <div id="mode-select">
-            <label for="gameMode">Game Mode:</label>
-            <select id="gameMode">
-                <option value="normal">Normal</option>
-                <option value="timed">Timed</option>
-                <option value="hint">Hint</option>
-            </select>
-        </div>
-        <div id="timer"></div>
-        <div id="output"></div>
-        <input type="text" id="guessInput" placeholder="Enter your guess">
-        <button id="guessButton">Guess</button>
-        <p id="scoreDisplay">Score: 0</p>
+    <div id="gameContainer">
+        <div id="score">Score: 0</div>
+        <div id="lives">Lives: 3</div>
+        <div id="basket"></div>
     </div>
-
+    <div id="gameOverUI">
+        <h1>Game Over</h1>
+        <p id="finalScore"></p>
+        <button id="playAgainButton">Play Again</button>
+        <button id="leaderboardButton">View Leaderboard</button>
+    </div>
     <script>
-        document.addEventListener("DOMContentLoaded", () => {
-            const characters = {
-                "Steve": { description: "the sentient stapler with existential dread", features: ["office supplies", "existential"] },
-                "Hao": { description: "the master of puns so bad they're good (or are they?)", features: ["puns", "bad jokes"] },
-                "A talking toaster": { description: "that dispenses wisdom and slightly burnt toast", features: ["toast", "wisdom"] },
-                "A time traveling pigeon": { description: "who's seen some stuff.", features: ["time travel", "pigeons"] },
-                // ...other characters...
-            };
+        const gameContainer = document.getElementById("gameContainer");
+        const basket = document.getElementById("basket");
+        const scoreDisplay = document.getElementById("score");
+        const livesDisplay = document.getElementById("lives");
+        const gameOverUI = document.getElementById("gameOverUI");
+        const finalScore = document.getElementById("finalScore");
+        const playAgainButton = document.getElementById("playAgainButton");
+        const leaderboardButton = document.getElementById("leaderboardButton");
 
-            const phrases = {
-                intro: [
-                    "Welcome to the chaotic realm of 'Who is Ohio?' Prepare for the absurd!",
-                    "Enter the void where logic takes a vacation. We call it 'Who is Ohio?'",
-                ],
-                thinking: [
-                    "I'm contemplating an entity... or a glitch in the cosmic microwave...",
-                    "My thoughts drift to a being... or a rogue thought escaped from a banana...",
-                ],
-                guess: [
-                    "Who... or what... dares to claim the title of Ohio? And why are they wearing a hat?",
-                    "Tell me, what twisted form does Ohio take? And what's their favorite snack?",
-                ],
-                correct: [
-                    "You have pierced the veil! It was indeed Ohio! And they applaud your snack choice.",
-                    "Magnificent! Your intuition aligns with the absurd. Ohio revealed! You win a virtual high-five.",
-                ],
-                incorrect: [
-                    "Your perception falters. That was not Ohio. And they are judging your fashion sense.",
-                    "Alas, you have strayed from the path. Ohio remains elusive. And they are disappointed in your life choices.",
-                ],
-            };
+        let score = 0;
+        let lives = 3;
+        let fallingSpeed = 5; 
+        let combo = 0;
 
-            let score = 0;
-            let highScore = 0;
-            let maxAttempts = 5;
-            let chosenCharacter, characterData;
-            let guessCount = 0;
-            let timerInterval;
-            let timeLeft = 15;
+        const names = [
+            "Steve", "NGLin", "BSK", "Hibernation NHLin", "Jeff", "Jeffrey Bezos",
+            "Vivien", "Jorgina", "Ethan", "Ethanol", "Administrator Ethan",
+            "Jeff StoneHenge", "Juntheng", "FurryKJT", "Noah", "Albert Pung",
+            "Albert Chin", "Albert Kong", "Noah Chin", "Nevin", "Frustrated CHZ",
+            "CHZ", "CHZ'S mom", "Jeff Lai", "Fredrick", "Eddy", "Asian Diddy"
+        ];
 
-            const outputDiv = document.getElementById("output");
-            const guessInput = document.getElementById("guessInput");
-            const guessButton = document.getElementById("guessButton");
-            const scoreDisplay = document.getElementById("scoreDisplay");
-            const timerDisplay = document.getElementById("timer");
-            const gameModeSelect = document.getElementById("gameMode");
+        let basketPosition = gameContainer.offsetWidth / 2 - basket.offsetWidth / 2;
+        const basketSpeed = 20;
 
-            function appendToOutput(message) {
-                outputDiv.innerHTML += `<p>${message}</p>`;
+        document.addEventListener("keydown", (event) => {
+            if (event.key === "ArrowLeft") {
+                basketPosition = Math.max(0, basketPosition - basketSpeed);
+            } else if (event.key === "ArrowRight") {
+                basketPosition = Math.min(gameContainer.offsetWidth - basket.offsetWidth, basketPosition + basketSpeed);
             }
+            basket.style.left = `${basketPosition}px`;
+        });
 
-            function resetGame() {
-                clearInterval(timerInterval);
-                guessInput.value = "";
-                guessCount = 0;
-                timeLeft = 15;
-                timerDisplay.textContent = "";
-            }
+        function createFallingObject() {
+            const object = document.createElement("div");
+            object.classList.add("fallingObject");
 
-            function startGame() {
-                console.log("Starting the game...");
-                resetGame();
-                const gameMode = gameModeSelect.value;
-                chosenCharacter = Object.keys(characters)[Math.floor(Math.random() * Object.keys(characters).length)];
-                characterData = characters[chosenCharacter];
+            const randomName = names[Math.floor(Math.random() * names.length)];
+            const textElement = document.createElement("span");
+            textElement.textContent = randomName;
+            textElement.style.color = "white";
+            textElement.style.fontSize = "12px";
 
-                appendToOutput(phrases.intro[Math.floor(Math.random() * phrases.intro.length)]);
-                appendToOutput(phrases.thinking[Math.floor(Math.random() * phrases.thinking.length)]);
-                appendToOutput(phrases.guess[Math.floor(Math.random() * phrases.guess.length)]);
+            object.appendChild(textElement);
+            object.style.left = `${Math.random() * (gameContainer.offsetWidth - 30)}px`;
+            object.style.top = "0px";
+            gameContainer.appendChild(object);
 
-                if (gameMode === "timed") {
-                    timerInterval = setInterval(updateTimer, 1000);
+            let fallingInterval = setInterval(() => {
+                const objectTop = parseInt(object.style.top);
+                object.style.top = `${objectTop + fallingSpeed}px`;
+
+                const objectRect = object.getBoundingClientRect();
+                const basketRect = basket.getBoundingClientRect();
+
+                if (
+                    objectRect.bottom >= basketRect.top &&
+                    objectRect.left < basketRect.right &&
+                    objectRect.right > basketRect.left
+                ) {
+                    score++;
+                    combo++;
+                    scoreDisplay.textContent = `Score: ${score} (Combo: x${combo})`;
+                    updateBackground();
+                    checkAchievements();
+                    object.remove();
+                    clearInterval(fallingInterval);
                 }
-            }
 
-            function updateTimer() {
+                if (objectTop > gameContainer.offsetHeight) {
+                    combo = 0;
+                    lives--;
+                    livesDisplay.textContent = `Lives: ${lives}`;
+                    object.remove();
+                    clearInterval(fallingInterval);
+
+                    if (lives <= 0) {
+                        endGame();
+                    }
+                }
+            }, 30);
+        }
+
+        function updateBackground() {
+            if (score >= 20) gameContainer.style.backgroundColor = "#add8e6";
+            if (score >= 50) gameContainer.style.backgroundColor = "#87ceeb";
+            if (score >= 100) gameContainer.style.backgroundColor = "#4682b4";
+        }
+
+        function checkAchievements() {
+            if (score === 50) alert("Achievement Unlocked: Scored 50 Points!");
+            if (combo === 10) alert("Achievement Unlocked: 10x Combo!");
+        }
+
+        function endGame() {
+            clearInterval(objectSpawner);
+            finalScore.textContent = `Your Final Score: ${score}`;
+            gameOverUI.style.display = "block";
+        }
+
+        playAgainButton.addEventListener("click", () => {
+            score = 0;
+            lives = 3;
+            combo = 0;
+            scoreDisplay.textContent = `Score: ${score}`;
+            livesDisplay.textContent = `Lives: ${lives}`;
+            gameOverUI.style.display = "none";
+            objectSpawner = setInterval(createFallingObject, 1000);
+        });
+
+        leaderboardButton.addEventListener("click", () => {
+            window.location.href = "https://sites.google.com/view/who-is-lick-ball-master/leaderboard";
+        });
+
+        let objectSpawner = setInterval(createFallingObject, 1000);
+
+        let timeLeft = 60; 
+        const timerDisplay = document.createElement("div");
+        timerDisplay.style.position = "absolute";
+        timerDisplay.style.top = "10px";
+        timerDisplay.style.right = "10px";
+        timerDisplay.style.fontSize = "20px";
+        timerDisplay.style.color = "#333";
+        timerDisplay.textContent = `Time Left: ${timeLeft}s`;
+        gameContainer.appendChild(timerDisplay);
+
+        function startTimer() {
+            const timerInterval = setInterval(() => {
                 timeLeft--;
-                timerDisplay.textContent = `Time left: ${timeLeft}s`;
+                timerDisplay.textContent = `Time Left: ${timeLeft}s`;
+
                 if (timeLeft <= 0) {
                     clearInterval(timerInterval);
-                    appendToOutput("Time's up! Starting a new round...");
-                    startGame();
+                    endGame();
                 }
-            }
+            }, 1000);
+        }
 
-            function handleGuess() {
-                const guess = guessInput.value.trim().toLowerCase();
-
-                if (!guess) {
-                    appendToOutput("Please enter a valid guess.");
-                    return;
-                }
-
-                guessCount++;
-
-                if (guess === chosenCharacter.toLowerCase()) {
-                    appendToOutput(phrases.correct[Math.floor(Math.random() * phrases.correct.length)]);
-                    score += 10 - guessCount + 1;
-                    if (score > highScore) {
-                        highScore = score;
-                    }
-                    scoreDisplay.textContent = `Score: ${score}`;
-                    startGame();
-                } else {
-                    appendToOutput(phrases.incorrect[Math.floor(Math.random() * phrases.incorrect.length)]);
-                    if (guessCount >= maxAttempts) {
-                        appendToOutput(`The true Ohio was: ${chosenCharacter}`);
-                        score -= 5;
-                        scoreDisplay.textContent = `Score: ${score}`;
-                        startGame();
-                    }
-                }
-
-                if (gameModeSelect.value === "hint" && guessCount > 0) {
-                    const hint = characterData.features[Math.floor(Math.random() * characterData.features.length)];
-                    appendToOutput(`Hint: They are related to ${hint}`);
-                }
-
-                guessInput.value = "";
-            }
-
-            guessButton.addEventListener("click", handleGuess);
-            guessInput.addEventListener("keypress", (event) => {
-                if (event.key === "Enter") {
-                    handleGuess();
-                }
-            });
-
-            startGame();
-        });
+        startTimer();
     </script>
 </body>
 </html>
