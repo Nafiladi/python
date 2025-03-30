@@ -185,18 +185,28 @@
             object.style.top = "0px";
             gameContainer.appendChild(object);
 
-            object.addEventListener("click", () => {
-                score++;
-                combo++;
-                scoreDisplay.textContent = `Score: ${score}`;
-                comboDisplay.textContent = `Combo: x${combo}`;
-                object.remove();
-            });
-
             let fallingInterval = setInterval(() => {
                 const objectTop = parseInt(object.style.top);
                 object.style.top = `${objectTop + fallingSpeed}px`;
 
+                const objectRect = object.getBoundingClientRect();
+                const basketRect = basket.getBoundingClientRect();
+
+                // Check if the object is caught by the basket
+                if (
+                    objectRect.bottom >= basketRect.top &&
+                    objectRect.left < basketRect.right &&
+                    objectRect.right > basketRect.left
+                ) {
+                    score++;
+                    combo++;
+                    scoreDisplay.textContent = `Score: ${score}`;
+                    comboDisplay.textContent = `Combo: x${combo}`;
+                    object.remove();
+                    clearInterval(fallingInterval);
+                }
+
+                // Check if the object is missed
                 if (objectTop > gameContainer.offsetHeight) {
                     combo = 0;
                     comboDisplay.textContent = `Combo: x${combo}`;
