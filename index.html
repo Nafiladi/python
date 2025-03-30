@@ -4,7 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Catch the Falling Objects</title>
-    <link rel="stylesheet" href="styles.css">
     <style>
         body {
             margin: 0;
@@ -26,9 +25,10 @@
             left: 50%;
             width: 150px;
             height: 75px;
-            background-color: #ff6347;
+            background: linear-gradient(to bottom, #ff6347, #ff4500);
             border-radius: 10px;
             transform: translateX(-50%);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
         }
 
         .fallingObject {
@@ -54,15 +54,23 @@
             position: absolute;
             top: 10px;
             left: 10px;
-            font-size: 24px;
+            font-size: 20px;
             color: #333;
+        }
+
+        #combo {
+            position: absolute;
+            top: 40px;
+            left: 10px;
+            font-size: 18px;
+            color: #666;
         }
 
         #lives {
             position: absolute;
             top: 10px;
             left: 150px;
-            font-size: 24px;
+            font-size: 20px;
             color: #333;
         }
 
@@ -90,6 +98,7 @@
 <body>
     <div id="gameContainer">
         <div id="score">Score: 0</div>
+        <div id="combo">Combo: x0</div>
         <div id="lives">Lives: 3</div>
         <div id="basket"></div>
     </div>
@@ -103,6 +112,7 @@
         const gameContainer = document.getElementById("gameContainer");
         const basket = document.getElementById("basket");
         const scoreDisplay = document.getElementById("score");
+        const comboDisplay = document.getElementById("combo");
         const livesDisplay = document.getElementById("lives");
         const gameOverUI = document.getElementById("gameOverUI");
         const finalScore = document.getElementById("finalScore");
@@ -113,6 +123,7 @@
         let lives = 3;
         let fallingSpeed = 5; 
         let combo = 0;
+        let gameRunning = true;
 
         const names = [
             "Steve", "NGLin", "BSK", "Hibernation NHLin", "Jeff", "Jeffrey Bezos",
@@ -122,8 +133,33 @@
             "CHZ", "CHZ'S mom", "Jeff Lai", "Fredrick", "Eddy", "Asian Diddy"
         ];
 
-        let basketPosition = gameContainer.offsetWidth / 2 - basket.offsetWidth / 2;
+        let basketPosition = gameContainer.offsetWidth / 2 - 75; // Initialize basket position
         const basketSpeed = 20;
+
+        // Set the initial position of the basket
+        basket.style.left = `${basketPosition}px`;
+
+        // Add touch support for dragging the basket
+        let isDragging = false;
+
+        basket.addEventListener("touchstart", (event) => {
+            isDragging = true;
+        });
+
+        basket.addEventListener("touchmove", (event) => {
+            if (isDragging) {
+                const touch = event.touches[0];
+                const newBasketPosition = touch.clientX - basket.offsetWidth / 2;
+
+                // Ensure the basket stays within the game container
+                basketPosition = Math.max(0, Math.min(gameContainer.offsetWidth - basket.offsetWidth, newBasketPosition));
+                basket.style.left = `${basketPosition}px`;
+            }
+        });
+
+        basket.addEventListener("touchend", () => {
+            isDragging = false;
+        });
 
         document.addEventListener("keydown", (event) => {
             if (event.key === "ArrowLeft") {
@@ -135,27 +171,25 @@
         });
 
         function createFallingObject() {
+            if (!gameRunning) return;
+
             const object = document.createElement("div");
             object.classList.add("fallingObject");
 
             const randomName = names[Math.floor(Math.random() * names.length)];
             const textElement = document.createElement("span");
             textElement.textContent = randomName;
-            textElement.style.color = "white";
-            textElement.style.fontSize = "12px";
 
             object.appendChild(textElement);
             object.style.left = `${Math.random() * (gameContainer.offsetWidth - 50)}px`;
             object.style.top = "0px";
             gameContainer.appendChild(object);
 
-            // Make the object clickable
             object.addEventListener("click", () => {
                 score++;
                 combo++;
-                scoreDisplay.textContent = `Score: ${score} (Combo: x${combo})`;
-                updateBackground();
-                checkAchievements();
+                scoreDisplay.textContent = `Score: ${score}`;
+                comboDisplay.textContent = `Combo: x${combo}`;
                 object.remove();
             });
 
@@ -163,25 +197,9 @@
                 const objectTop = parseInt(object.style.top);
                 object.style.top = `${objectTop + fallingSpeed}px`;
 
-                const objectRect = object.getBoundingClientRect();
-                const basketRect = basket.getBoundingClientRect();
-
-                if (
-                    objectRect.bottom >= basketRect.top &&
-                    objectRect.left < basketRect.right &&
-                    objectRect.right > basketRect.left
-                ) {
-                    score++;
-                    combo++;
-                    scoreDisplay.textContent = `Score: ${score} (Combo: x${combo})`;
-                    updateBackground();
-                    checkAchievements();
-                    object.remove();
-                    clearInterval(fallingInterval);
-                }
-
                 if (objectTop > gameContainer.offsetHeight) {
                     combo = 0;
+                    comboDisplay.textContent = `Combo: x${combo}`;
                     lives--;
                     livesDisplay.textContent = `Lives: ${lives}`;
                     object.remove();
@@ -194,18 +212,8 @@
             }, 30);
         }
 
-        function updateBackground() {
-            if (score >= 20) gameContainer.style.backgroundColor = "#add8e6";
-            if (score >= 50) gameContainer.style.backgroundColor = "#87ceeb";
-            if (score >= 100) gameContainer.style.backgroundColor = "#4682b4";
-        }
-
-        function checkAchievements() {
-            if (score === 50) alert("Achievement Unlocked: Scored 50 Points!");
-            if (combo === 10) alert("Achievement Unlocked: 10x Combo!");
-        }
-
         function endGame() {
+            gameRunning = false;
             clearInterval(objectSpawner);
             finalScore.textContent = `Your Final Score: ${score}`;
             gameOverUI.style.display = "block";
@@ -215,7 +223,9 @@
             score = 0;
             lives = 3;
             combo = 0;
+            gameRunning = true;
             scoreDisplay.textContent = `Score: ${score}`;
+            comboDisplay.textContent = `Combo: x${combo}`;
             livesDisplay.textContent = `Lives: ${lives}`;
             gameOverUI.style.display = "none";
             objectSpawner = setInterval(createFallingObject, 1000);
@@ -226,30 +236,6 @@
         });
 
         let objectSpawner = setInterval(createFallingObject, 1000);
-
-        let timeLeft = 60; 
-        const timerDisplay = document.createElement("div");
-        timerDisplay.style.position = "absolute";
-        timerDisplay.style.top = "10px";
-        timerDisplay.style.right = "10px";
-        timerDisplay.style.fontSize = "20px";
-        timerDisplay.style.color = "#333";
-        timerDisplay.textContent = `Time Left: ${timeLeft}s`;
-        gameContainer.appendChild(timerDisplay);
-
-        function startTimer() {
-            const timerInterval = setInterval(() => {
-                timeLeft--;
-                timerDisplay.textContent = `Time Left: ${timeLeft}s`;
-
-                if (timeLeft <= 0) {
-                    clearInterval(timerInterval);
-                    endGame();
-                }
-            }, 1000);
-        }
-
-        startTimer();
     </script>
 </body>
 </html>
